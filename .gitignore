@@ -1,0 +1,107 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# customer import data
+/data/import/
+
+# customer feedback (Excel + extracted output)
+/feedback/input/
+/feedback/output/
+
+# taniguchi api docs
+/taniguchi/api/**
+!/taniguchi/api/
+!/taniguchi/api/Fix/
+!/taniguchi/api/Fix/**
+!/taniguchi/api/API設計書_一覧.md
+!/taniguchi/api/API設計書_記載テンプレート.md
+/taniguchi/api/~$*.docx
+
+# taniguchi work
+/taniguchi/work/**
+!/taniguchi/work/
+!/taniguchi/work/README.md
+.claude/worktrees/
+
+# docs (all local only)
+/docs/
+
+
+# Excel temp files
+~$*
+
+# build output (accidental commit)
+/out */
+
+# screenshots (regenerable)
+/screenshots/
+# プロジェクトルート直下のPNG（playwrightや作業用キャプチャ）。サブディレクトリの画像は対象外
+/*.png
+
+# playwright MCP logs (regenerable)
+/.playwright-mcp/
+
+# design (all local only)
+/design/
+
+# external skills
+/.claude/skills/awesome-skills/
+
+
+# scripts (doc generation)
+/scripts/
+
+# claude code config (local only)
+/.claude/skills/
+/.claude/agents/
+/.claude/commands/
+/.claude/docs/
+
+# misc tools
+/capture_screenshots.mjs
+/design/fetch-figma.mjs
+/design/sync-tokens.mjs
+/AGENTS.md
+/README_JP.md
+/.env.figma*
+/.github/*
+!/.github/workflows/
