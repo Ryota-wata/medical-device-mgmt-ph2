@@ -22,3 +22,4 @@ export * from './userFeatureStore';
 export * from './facilityGroupStore';
 export * from './maintenanceContractStore';
 export * from './lendingStore';
+export * from './ledgerApplicationStore';

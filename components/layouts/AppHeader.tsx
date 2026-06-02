@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores';
 import { useResponsive } from '@/lib/hooks/useResponsive';
+import { getUserType } from '@/lib/types/user';
 
 export interface AppHeaderNavItem {
   key: string;
@@ -17,6 +18,22 @@ export interface AppHeaderProps {
   /** 横並びナビ項目（権限フィルタは呼出側） */
   navItems?: AppHeaderNavItem[];
 }
+
+const PersonaBadge: React.FC<{ persona: 'hospital' | 'ship' }> = ({ persona }) => {
+  const isShip = persona === 'ship';
+  const label = isShip ? 'SHIP' : '病院';
+  const cls = isShip
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : 'bg-sky-50 text-sky-700 border-sky-200';
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded border ${cls} tabular-nums`}
+      aria-label={`ペルソナ: ${label}`}
+    >
+      {label}
+    </span>
+  );
+};
 
 const NavIcon: React.FC<{ type: AppHeaderNavItem['icon'] }> = ({ type }) => {
   const cls = 'size-4 text-content-sub';
@@ -127,6 +144,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ navItems = [] }) => {
                 <span className="text-sm font-medium max-w-[120px] truncate">
                   {user?.username || 'ユーザー'}
                 </span>
+                {user?.email && (
+                  <PersonaBadge persona={getUserType(user.email)} />
+                )}
                 <svg
                   className={`size-3 text-content-sub transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
                   viewBox="0 0 20 20"
@@ -148,8 +168,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ navItems = [] }) => {
                   {/* ユーザー情報 */}
                   {user && (
                     <div className="px-4 py-3 border-b border-stroke-card bg-surface-screen">
-                      <div className="text-sm font-semibold text-content-primary truncate">
-                        {user.username}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-content-primary truncate">
+                          {user.username}
+                        </span>
+                        {user.email && <PersonaBadge persona={getUserType(user.email)} />}
                       </div>
                       {user.email && (
                         <div className="text-xs text-content-sub mt-0.5 truncate">{user.email}</div>
@@ -239,6 +262,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ navItems = [] }) => {
       {/* モバイル展開メニュー */}
       {isMobile && isMobileMenuOpen && (
         <div className="mt-3 pt-3 border-t border-stroke-card flex flex-col gap-1">
+          {user && (
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <span className="text-sm font-semibold text-content-primary truncate">
+                {user.username}
+              </span>
+              {user.email && <PersonaBadge persona={getUserType(user.email)} />}
+            </div>
+          )}
           {selectedFacility && user?.accessibleFacilities && (
             <div className="flex items-center gap-2 px-3 py-2">
               <span className="px-3 py-1 bg-surface-select text-cta-primary-dark border border-cta-primary rounded-full text-xs font-medium">

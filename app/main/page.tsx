@@ -321,11 +321,18 @@ export default function MainPage() {
           </div>
         </div>
 
-        {/* ダッシュボードボディ（次スコープ用） */}
+        {/* Ph2 提案機能 導線 */}
         <div className="px-5 py-10 min-h-[300px] flex items-center justify-center flex-1">
-          <div className="text-center text-content-sub text-base p-10 bg-surface-card border-2 border-dashed border-stroke-input rounded-lg max-w-[600px] mx-auto">
-            <p className="text-pretty">※ ダッシュボード機能は次スコープで実装予定です</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/ph2')}
+            className="text-center text-base p-8 bg-white border-2 border-cta-primary rounded-lg max-w-[600px] mx-auto cursor-pointer hover:bg-cta-primary hover:text-white transition-colors shadow-sm"
+          >
+            <p className="text-pretty font-semibold mb-1">Ph2 提案機能 一覧へ</p>
+            <p className="text-xs opacity-80 text-pretty">
+              ダッシュボード / 電帳法対応申請一覧 / 取得見積一覧 / Excel出力センター / 代理見積登録 ほか
+            </p>
+          </button>
         </div>
 
         {/* フッター */}
