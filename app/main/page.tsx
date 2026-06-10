@@ -11,6 +11,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import { AppHeader, type AppHeaderNavItem } from '@/components/layouts/AppHeader';
 import { ApplicationStatusModal } from '@/components/modals/ApplicationStatusModal';
+import { MenuChoiceModal, type MenuChoiceItem } from '@/components/modals/MenuChoiceModal';
+import { ClipboardCheck, Archive, FileText, ScrollText, ListChecks, Wrench, Stethoscope, FileSpreadsheet, Inbox } from 'lucide-react';
 
 export default function MainPage() {
   const router = useRouter();
@@ -25,6 +27,11 @@ export default function MainPage() {
   const [isHospitalMasterModalOpen, setIsHospitalMasterModalOpen] = useState(false);
   const [isLendingMenuModalOpen, setIsLendingMenuModalOpen] = useState(false);
   const [isApplicationStatusModalOpen, setIsApplicationStatusModalOpen] = useState(false);
+  // Ph2 サブメニューモーダル
+  const [isInspectionMenuOpen, setIsInspectionMenuOpen] = useState(false);
+  const [isInventoryMenuOpen, setIsInventoryMenuOpen] = useState(false);
+  const [isApplicationStatusMenuOpen, setIsApplicationStatusMenuOpen] = useState(false);
+  const [isRepairMenuOpen, setIsRepairMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
@@ -37,7 +44,7 @@ export default function MainPage() {
   const [deleteTargetList, setDeleteTargetList] = useState<{ id: string; name: string } | null>(null);
 
   // モーダル表示中のbodyスクロールロック
-  const isAnyModalOpen = isListModalOpen || isMasterModalOpen || isEditListModalOpen || isHospitalMasterModalOpen || isLendingMenuModalOpen || isApplicationStatusModalOpen || isLogoutConfirmOpen || deleteConfirmOpen;
+  const isAnyModalOpen = isListModalOpen || isMasterModalOpen || isEditListModalOpen || isHospitalMasterModalOpen || isLendingMenuModalOpen || isApplicationStatusModalOpen || isLogoutConfirmOpen || deleteConfirmOpen || isInspectionMenuOpen || isInventoryMenuOpen || isApplicationStatusMenuOpen || isRepairMenuOpen;
   useBodyScrollLock(isAnyModalOpen);
 
   // 権限フック
@@ -161,7 +168,11 @@ export default function MainPage() {
   };
 
   const handleMaintenanceInspection = () => {
-    router.push('/inspection-prep');
+    setIsInspectionMenuOpen(true);
+  };
+
+  const handleInventory = () => {
+    setIsInventoryMenuOpen(true);
   };
 
   const handleLendingManagement = () => {
@@ -169,7 +180,7 @@ export default function MainPage() {
   };
 
   const handleRepairApplication = () => {
-    router.push('/repair-request');
+    setIsRepairMenuOpen(true);
   };
 
   const handleAssetListForHospital = () => {
@@ -187,11 +198,7 @@ export default function MainPage() {
   };
 
   const handleApplicationStatus = () => {
-    setIsApplicationStatusModalOpen(true);
-  };
-
-  const handleEditAnalysis = () => {
-    router.push('/quotation-data-box/remodel-management');
+    setIsApplicationStatusMenuOpen(true);
   };
 
   const handleDeleteEditList = (list: { id: string; name: string }) => {
@@ -273,20 +280,10 @@ export default function MainPage() {
               </button>
             )}
 
-            {/* 編集・分析 */}
-            <button
-              onClick={handleEditAnalysis}
-              className={`bg-surface-card border border-cta-primary rounded-lg font-normal text-cta-primary-dark cursor-pointer transition-all hover:bg-cta-primary hover:text-white hover:shadow-md ${
-                isMobile ? 'px-4 py-4 text-sm' : 'px-6 py-3.5 text-base'
-              }`}
-            >
-              編集・分析
-            </button>
-
             {/* 棚卸し */}
             {isMainButtonVisible('inventory') && (
               <button
-                onClick={() => router.push('/inventory')}
+                onClick={handleInventory}
                 className={`bg-surface-card border border-cta-primary rounded-lg font-normal text-cta-primary-dark cursor-pointer transition-all hover:bg-cta-primary hover:text-white hover:shadow-md ${
                   isMobile ? 'px-4 py-4 text-sm' : 'px-6 py-3.5 text-base'
                 }`}
@@ -318,21 +315,28 @@ export default function MainPage() {
                 申請ステータス
               </button>
             )}
+
+            {/* 実績データ検索・出力（Ph2 新規メニュー） */}
+            <button
+              onClick={() => router.push('/performance-search')}
+              className={`bg-surface-card border border-cta-primary rounded-lg font-normal text-cta-primary-dark cursor-pointer transition-all hover:bg-cta-primary hover:text-white hover:shadow-md ${
+                isMobile ? 'px-4 py-4 text-sm' : 'px-6 py-3.5 text-base'
+              }`}
+            >
+              実績データ検索・出力
+            </button>
           </div>
         </div>
 
-        {/* Ph2 提案機能 導線 */}
-        <div className="px-5 py-10 min-h-[300px] flex items-center justify-center flex-1">
-          <button
-            type="button"
-            onClick={() => router.push('/ph2')}
-            className="text-center text-base p-8 bg-white border-2 border-cta-primary rounded-lg max-w-[600px] mx-auto cursor-pointer hover:bg-cta-primary hover:text-white transition-colors shadow-sm"
-          >
-            <p className="text-pretty font-semibold mb-1">Ph2 提案機能 一覧へ</p>
-            <p className="text-xs opacity-80 text-pretty">
-              ダッシュボード / 電帳法対応申請一覧 / 取得見積一覧 / Excel出力センター / 代理見積登録 ほか
-            </p>
-          </button>
+        {/* ペルソナ別 メイン画面コンテンツ */}
+        <div className="flex-1 px-5 py-8">
+          <div className="max-w-[1000px] mx-auto">
+            {isHospitalUser ? (
+              <HospitalDashboardSummary onDetailClick={() => router.push('/dashboard-hospital')} />
+            ) : (
+              <ShipMainSummary onProxyClick={() => router.push('/proxy-quotation')} />
+            )}
+          </div>
         </div>
 
         {/* フッター */}
@@ -782,6 +786,137 @@ export default function MainPage() {
         onClose={() => setIsApplicationStatusModalOpen(false)}
       />
 
+      {/* 点検 メニュー */}
+      <MenuChoiceModal
+        open={isInspectionMenuOpen}
+        onClose={() => setIsInspectionMenuOpen(false)}
+        title="点検"
+        description="点検実施 / 計画表出力 / 日常点検管理"
+        items={[
+          {
+            key: 'inspection-prep',
+            label: '点検準備・実施',
+            description: '点検実施のための機器選定・準備（既存）',
+            badge: 'Ph1',
+            icon: <ClipboardCheck className="w-5 h-5" />,
+            onSelect: () => router.push('/inspection-prep'),
+          },
+          {
+            key: 'inspection-daily',
+            label: '点検タブ 日常点検 (S18)',
+            description: '点検種別フィルタに「日常点検」追加 + メニュー変更・登録解除',
+            badge: 'Ph2',
+            icon: <Stethoscope className="w-5 h-5" />,
+            onSelect: () => router.push('/ph2-inspection-daily'),
+          },
+          {
+            key: 'inspection-excel',
+            label: '点検計画表・点検実績 Excel 出力 (S7/S9)',
+            description: '監査ガイドライン準拠の点検計画・実績 Excel 出力',
+            badge: 'Ph2',
+            icon: <FileSpreadsheet className="w-5 h-5" />,
+            onSelect: () => router.push('/ph2-excel-exports'),
+          },
+        ]}
+      />
+
+      {/* 棚卸し メニュー */}
+      <MenuChoiceModal
+        open={isInventoryMenuOpen}
+        onClose={() => setIsInventoryMenuOpen(false)}
+        title="棚卸し"
+        description="棚卸し実施 / 4段階運用 / 結果Excel出力"
+        items={[
+          {
+            key: 'inventory',
+            label: '棚卸し画面',
+            description: '日常運用の棚卸し作業（既存。Ph1リポで再設計予定）',
+            badge: 'Ph1',
+            icon: <Archive className="w-5 h-5" />,
+            onSelect: () => router.push('/inventory'),
+            recommended: true,
+          },
+          {
+            key: 'inventory-4step',
+            label: '棚卸 4段階運用 (S17)',
+            description: '依頼中 → 実施中 → 集約中 → 除却中 → 完了 の状態遷移管理',
+            badge: 'Ph2',
+            icon: <ListChecks className="w-5 h-5" />,
+            onSelect: () => router.push('/ph2-inventory-4step'),
+          },
+          {
+            key: 'inventory-excel',
+            label: '棚卸実績 Excel 出力 (S6)',
+            description: '事務担当による棚卸結果の Excel 出力',
+            badge: 'Ph2',
+            icon: <FileSpreadsheet className="w-5 h-5" />,
+            onSelect: () => router.push('/ph2-excel-exports'),
+          },
+        ]}
+      />
+
+      {/* 申請ステータス メニュー */}
+      <MenuChoiceModal
+        open={isApplicationStatusMenuOpen}
+        onClose={() => setIsApplicationStatusMenuOpen(false)}
+        title="申請ステータス"
+        description="自分の申請の状態確認 / 電帳法対応一覧 / 未執行申請"
+        items={[
+          {
+            key: 'app-status',
+            label: '申請ステータス（既存モーダル）',
+            description: '自分が登録した申請のステータス確認',
+            badge: 'Ph1',
+            icon: <FileText className="w-5 h-5" />,
+            onSelect: () => setIsApplicationStatusModalOpen(true),
+            recommended: true,
+          },
+          {
+            key: 'ledger',
+            label: '電帳法対応 申請一覧 (S3)',
+            description: '訂正・削除履歴 / 帳簿関連性 / 高度検索ペイン',
+            badge: 'Ph2',
+            icon: <ScrollText className="w-5 h-5" />,
+            onSelect: () => router.push('/ledger-applications'),
+          },
+          {
+            key: 'pending',
+            label: '未執行申請一覧',
+            description: '承認待ち / 差戻し / 取下げ等の未執行申請を横断検索',
+            badge: 'Ph2',
+            icon: <Inbox className="w-5 h-5" />,
+            onSelect: () => router.push('/performance-search/applications-pending'),
+          },
+        ]}
+      />
+
+      {/* 修理 メニュー */}
+      <MenuChoiceModal
+        open={isRepairMenuOpen}
+        onClose={() => setIsRepairMenuOpen(false)}
+        title="修理"
+        description="修理申請 / 実績 Excel 出力"
+        items={[
+          {
+            key: 'repair-request',
+            label: '修理申請',
+            description: '修理申請の起票（既存）',
+            badge: 'Ph1',
+            icon: <Wrench className="w-5 h-5" />,
+            onSelect: () => router.push('/repair-request'),
+            recommended: true,
+          },
+          {
+            key: 'repair-excel',
+            label: '修理・点検実績 Excel 出力 (S9)',
+            description: '修理管理 + 点検管理 の実績を監査用 Excel 出力',
+            badge: 'Ph2',
+            icon: <FileSpreadsheet className="w-5 h-5" />,
+            onSelect: () => router.push('/ph2-excel-exports'),
+          },
+        ]}
+      />
+
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
         isOpen={deleteConfirmOpen}
@@ -808,5 +943,128 @@ export default function MainPage() {
         cancelLabel="キャンセル"
       />
     </div>
+  );
+}
+
+/**
+ * 病院ユーザー向け メイン画面ダッシュボード概要
+ * 顧客要求: 「ユーザー側のダッシュボードのみ作成。当該年度の各種累計実績（購入・修理・契約・廃棄）」
+ */
+function HospitalDashboardSummary({ onDetailClick }: { onDetailClick: () => void }) {
+  // 当該年度累計実績（モック）
+  const summary = [
+    { label: '購入', amount: 28_540_000, count: 12, budget: 50_000_000, color: 'sky' },
+    { label: '修理', amount: 1_842_000, count: 23, budget: 5_000_000, color: 'amber' },
+    { label: '契約（保守）', amount: 8_650_000, count: 86, budget: 12_000_000, color: 'emerald' },
+    { label: '廃棄', amount: 0, count: 8, budget: 0, color: 'stone' },
+  ] as const;
+  const colorMap = {
+    sky: 'border-sky-200 bg-sky-50/40',
+    amber: 'border-amber-200 bg-amber-50/40',
+    emerald: 'border-emerald-200 bg-emerald-50/40',
+    stone: 'border-stone-200 bg-stone-50/40',
+  } as const;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-base font-semibold text-content-primary">
+            当該年度 累計実績（自施設）
+          </h2>
+          <p className="text-xs text-content-sub mt-0.5">
+            2026年度（4月〜現在） / クリックで詳細
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDetailClick}
+          className="text-xs text-content-link hover:underline bg-transparent border-0 cursor-pointer p-0"
+        >
+          詳細ダッシュボードへ →
+        </button>
+      </div>
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        {summary.map((s) => {
+          const ratio = s.budget > 0 ? Math.min(100, (s.amount / s.budget) * 100) : 0;
+          return (
+            <div
+              key={s.label}
+              className={`bg-white border rounded-lg p-4 ${colorMap[s.color]}`}
+            >
+              <div className="text-xs text-content-sub">{s.label}</div>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-xl font-bold tabular-nums text-content-primary">
+                  {s.amount > 0 ? `¥${s.amount.toLocaleString('ja-JP')}` : '—'}
+                </span>
+              </div>
+              <div className="text-xs text-content-sub mt-0.5 tabular-nums">
+                <span className="font-semibold">{s.count}</span> 件
+                {s.budget > 0 && (
+                  <span className="ml-2">
+                    予算消化 <span className="font-semibold">{Math.round(ratio)}%</span>
+                  </span>
+                )}
+              </div>
+              {s.budget > 0 && (
+                <div className="mt-2 h-1.5 bg-stone-100 rounded">
+                  <div
+                    className={`h-full rounded ${
+                      ratio >= 90 ? 'bg-rose-500' : ratio >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${ratio}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * SHIPユーザー向け メイン画面サマリー
+ * 代理見積登録キュー + 横断管理画面への導線
+ */
+function ShipMainSummary({ onProxyClick }: { onProxyClick: () => void }) {
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-semibold text-content-primary">
+          コンサル業務 サマリー
+        </h2>
+      </div>
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={onProxyClick}
+          className="text-left bg-white border border-amber-200 bg-amber-50/40 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="text-xs text-content-sub">代理見積登録キュー</div>
+          <div className="mt-1 text-xl font-bold tabular-nums text-content-primary">
+            6 <span className="text-xs font-medium text-content-sub">件</span>
+          </div>
+          <div className="text-xs text-content-sub mt-0.5">6日待ち 1件 / 詳細へ →</div>
+        </button>
+        <div className="bg-white border border-stroke-card rounded-lg p-4">
+          <div className="text-xs text-content-sub">担当施設数</div>
+          <div className="mt-1 text-xl font-bold tabular-nums text-content-primary">
+            3 <span className="text-xs font-medium text-content-sub">施設</span>
+          </div>
+          <div className="text-xs text-content-sub mt-0.5">
+            東京中央 / 横浜総合 / 千葉医療C
+          </div>
+        </div>
+        <div className="bg-white border border-stroke-card rounded-lg p-4">
+          <div className="text-xs text-content-sub">担当機器（全施設合計）</div>
+          <div className="mt-1 text-xl font-bold tabular-nums text-content-primary">
+            4,560 <span className="text-xs font-medium text-content-sub">台</span>
+          </div>
+          <div className="text-xs text-content-sub mt-0.5">3 施設合計</div>
+        </div>
+      </div>
+    </section>
   );
 }

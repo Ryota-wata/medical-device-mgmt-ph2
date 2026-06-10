@@ -43,16 +43,6 @@ const FEATURES: FeatureItem[] = [
     persona: 'hospital',
     size: '大',
   },
-  {
-    category: '区分2 ダッシュボード',
-    code: 'S2',
-    title: 'SHIP用ダッシュボード',
-    description: '全施設の見積取得状況 / 代理見積キュー / 横断サマリー / アラート機器一覧',
-    href: '/dashboard-ship',
-    icon: BarChart3,
-    persona: 'ship',
-    size: '大',
-  },
   // 区分1 全Data
   {
     category: '区分1 全Data（電帳法対応）',
