@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useRfqGroupStore } from '@/lib/stores/rfqGroupStore';
 import { useEditListStore } from '@/lib/stores/editListStore';
 import { Header } from '@/components/layouts/Header';
+import { OutlookComposeModal, type OutlookAttachment } from '@/components/modals/OutlookComposeModal';
 
 // ──────────────────────────────────────────────
 // 全体ステップ定義
@@ -117,6 +118,9 @@ function RfqProcessContent() {
   // ── プレビュー表示 ──
   const [showPreview, setShowPreview] = useState(false);
 
+  // ── Outlook 連携モーダル（依頼送信時に起動） ──
+  const [outlookCompose, setOutlookCompose] = useState<{ vendorIndices: number[] } | null>(null);
+
   // ── パネル幅（ドラッグリサイズ） ──
   const [leftPanelWidth, setLeftPanelWidth] = useState<number>(55);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -163,17 +167,13 @@ function RfqProcessContent() {
     });
   }, [vendors.length]);
 
-  // ── 個別依頼送信 ──
-  const handleSendSingleVendor = useCallback((index: number) => {
+  // ── 内部: 業者を「送信済」に記録（Outlookメール起動後に呼ばれる） ──
+  const markVendorAsSent = useCallback((index: number) => {
     if (!rfqGroup) return;
     const vendor = vendors[index];
-    if (!vendor.vendorName || !vendor.email) {
-      alert('業者名とメールアドレスは必須です');
-      return;
-    }
+    if (!vendor) return;
 
     if (index === 0 || vendor.rfqGroupId) {
-      // 先頭業者 or 既存レコード → updateRfqGroup
       const targetId = vendor.rfqGroupId || rfqGroup.id;
       updateRfqGroup(targetId, {
         vendorName: vendor.vendorName,
@@ -187,7 +187,6 @@ function RfqProcessContent() {
         i === index ? { ...v, isSent: true, rfqGroupId: targetId } : v
       ));
     } else {
-      // 追加業者 → cloneRfqGroupForVendor
       const newGroup = cloneRfqGroupForVendor(rfqGroup.id, {
         vendorName: vendor.vendorName,
         personInCharge: vendor.personInCharge,
@@ -199,9 +198,18 @@ function RfqProcessContent() {
         i === index ? { ...v, isSent: true, rfqGroupId: newGroup.id } : v
       ));
     }
-
-    alert(`${vendor.vendorName} への見積依頼を送信しました`);
   }, [rfqGroup, vendors, updateRfqGroup, cloneRfqGroupForVendor]);
+
+  // ── 個別依頼送信（Outlook連携モーダルを起動） ──
+  const handleSendSingleVendor = useCallback((index: number) => {
+    if (!rfqGroup) return;
+    const vendor = vendors[index];
+    if (!vendor.vendorName || !vendor.email) {
+      alert('業者名とメールアドレスは必須です');
+      return;
+    }
+    setOutlookCompose({ vendorIndices: [index] });
+  }, [rfqGroup, vendors]);
 
   // ドラッグハンドラ
   const handleDragMove = useCallback((e: MouseEvent) => {
@@ -239,50 +247,39 @@ function RfqProcessContent() {
     }, 1500);
   };
 
-  // ── 「SHIPへ依頼」一括送信 ──
+  // ── 「依頼送信（一括）」: 未送信業者すべてに対して Outlook 起動 ──
   const handleSendRfqAll = () => {
     if (!rfqGroup) return;
 
-    const unsent = vendors.filter(v => !v.isSent);
-    if (unsent.length === 0) {
+    const unsentIndices = vendors
+      .map((v, i) => (!v.isSent ? i : -1))
+      .filter(i => i >= 0);
+
+    if (unsentIndices.length === 0) {
       alert('送信対象の業者がありません');
       return;
     }
 
-    // バリデーション
-    const invalid = unsent.filter(v => !v.vendorName || !v.email);
+    const invalid = unsentIndices.filter(i => !vendors[i].vendorName || !vendors[i].email);
     if (invalid.length > 0) {
       alert('未送信の業者すべてに業者名とメールアドレスを入力してください');
       return;
     }
 
-    // 各未送信業者を送信
-    unsent.forEach(vendor => {
-      const index = vendors.indexOf(vendor);
-      if (index === 0 || vendor.rfqGroupId) {
-        const targetId = vendor.rfqGroupId || rfqGroup.id;
-        updateRfqGroup(targetId, {
-          vendorName: vendor.vendorName,
-          personInCharge: vendor.personInCharge,
-          email: vendor.email,
-          tel: vendor.tel,
-          rfqDeadline: vendor.submitDeadline,
-          status: '見積依頼済',
-        });
-      } else {
-        cloneRfqGroupForVendor(rfqGroup.id, {
-          vendorName: vendor.vendorName,
-          personInCharge: vendor.personInCharge,
-          email: vendor.email,
-          tel: vendor.tel,
-          deadline: vendor.submitDeadline,
-        });
-      }
-    });
-
-    alert(`${unsent.length}件の見積依頼をSHIPへ送信しました`);
-    router.push('/quotation-data-box/purchase-management');
+    setOutlookCompose({ vendorIndices: unsentIndices });
   };
+
+  // ── Outlook 起動と連動して呼ばれる: 対象業者を送信済に記録 ──
+  const handleOutlookSent = useCallback(() => {
+    if (!outlookCompose) return;
+    const indices = outlookCompose.vendorIndices;
+    indices.forEach(i => markVendorAsSent(i));
+    setOutlookCompose(null);
+    if (indices.length > 1) {
+      // 一括送信時: タスク管理に戻る
+      setTimeout(() => router.push('/quotation-data-box/purchase-management'), 100);
+    }
+  }, [outlookCompose, markVendorAsSent, router]);
 
   // ── 「タスク管理に戻る」 ──
   const handleCancel = () => {
@@ -1102,6 +1099,77 @@ function RfqProcessContent() {
           </div>
         </div>
       )}
+
+      {/* ===== Outlook 連携モーダル（依頼送信時に起動） ===== */}
+      {outlookCompose && (() => {
+        const targetVendors = outlookCompose.vendorIndices
+          .map(i => vendors[i])
+          .filter(Boolean);
+        const isBatch = targetVendors.length > 1;
+        const requesterDept = '医療機器管理課';
+        const requesterFacility = '当院';
+        const rfqNo = rfqGroup?.rfqNo || '';
+        const groupName = rfqGroup?.groupName || '';
+
+        // 件名: グループ名 + 件数 + 期限
+        const earliestDeadline = targetVendors
+          .map(v => v.submitDeadline)
+          .filter(Boolean)
+          .sort()[0] || '';
+        const subject = `【見積依頼】${groupName || '医療機器'}${editListItems.length > 0 ? ` (${editListItems.length}件)` : ''}${earliestDeadline ? ` ／ 提出期限 ${earliestDeadline}` : ''} ／ ${rfqNo}`;
+
+        // 本文: 業者名（業者複数時は「各位」）+ 概要 + 品目リスト + 期限 + 署名
+        const greeting = isBatch
+          ? '各位'
+          : `${targetVendors[0].vendorName} ${targetVendors[0].personInCharge ? `${targetVendors[0].personInCharge} 様` : 'ご担当者様'}`;
+
+        const itemsLines = editListItems.length === 0
+          ? '  （別添の見積依頼書をご参照ください）'
+          : editListItems.map((it, i) =>
+              `  ${i + 1}. ${it.name || it.item || '-'}${it.model ? `（${it.model}）` : ''}${it.department ? ` / 設置: ${it.department}` : ''}${it.roomName ? ` ${it.roomName}` : ''}`
+            ).join('\n');
+
+        const noteLine = !isBatch && targetVendors[0].requestNote
+          ? `\n\n■ ご依頼事項\n${targetVendors[0].requestNote}`
+          : '';
+
+        const body = `${greeting}\n\nお世話になっております。\n${requesterFacility} ${requesterDept} です。\n\n下記機器について、見積をお願いいたします。\n\n──────────────────────────\n■ 見積依頼番号\n${rfqNo}\n\n■ 案件\n${groupName}\n\n■ 対象機器（${editListItems.length}件）\n${itemsLines}${earliestDeadline ? `\n\n■ 見積提出期限\n${earliestDeadline}` : ''}\n\n■ 提出方法\n本メールに添付（PDF または Excel）でご返信ください${noteLine}\n──────────────────────────\n\n添付の見積依頼書をご確認の上、ご対応のほどよろしくお願いいたします。\n\n${requesterFacility} ${requesterDept}`;
+
+        // 添付（モック）
+        const downloadDummy = (filename: string) => () => {
+          const blob = new Blob([`Mock attachment: ${filename}\n見積依頼番号: ${rfqNo}\n業者: ${targetVendors.map(v => v.vendorName).join(', ')}`], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        };
+        const attachments: OutlookAttachment[] = [
+          {
+            filename: `見積依頼書_${rfqNo || 'RFQ'}.pdf`,
+            fileType: 'PDF',
+            size: '184KB',
+            onDownload: downloadDummy(`見積依頼書_${rfqNo || 'RFQ'}.pdf`),
+          },
+        ];
+
+        return (
+          <OutlookComposeModal
+            open={true}
+            onClose={() => setOutlookCompose(null)}
+            toAddresses={targetVendors.map(v => v.email)}
+            vendorLabels={targetVendors.map(v => v.vendorName)}
+            subject={subject}
+            body={body}
+            attachments={attachments}
+            onSend={handleOutlookSent}
+            primaryButtonLabel={isBatch ? `Outlook で ${targetVendors.length} 社にメール作成` : 'Outlook で新規メール作成'}
+          />
+        );
+      })()}
     </div>
   );
 }
