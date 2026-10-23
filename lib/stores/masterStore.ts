@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { FacilityMaster, AssetMaster, DepartmentMaster, RoomCategoryMaster, VendorMaster } from '@/lib/types/master';
 import { initialAssetMasters } from '@/lib/data/initialAssetMasters';
 import { customerDepartments, customerRoomCategories } from '@/lib/data/customer/departments';
+import { buildPh2Sample } from '@/lib/data/facilityMasterSamples';
 
 interface MasterStore {
   facilities: FacilityMaster[];
@@ -824,7 +825,8 @@ const initialRoomCategories: RoomCategoryMaster[] = [
 ];
 
 export const useMasterStore = create<MasterStore>((set, get) => ({
-  facilities: initialFacilities,
+  // Ph2 施設マスタの契約・認定・病床のサンプル値を付ける（顧客ワイヤー 操作UI_施設マスタ v3.3）
+  facilities: initialFacilities.map((f, i) => ({ ...f, ...buildPh2Sample(f, i) })),
   assets: initialAssets,
   departments: customerDepartments,
   roomCategories: customerRoomCategories,

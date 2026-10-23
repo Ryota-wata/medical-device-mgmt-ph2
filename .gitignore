@@ -88,7 +88,10 @@ next-env.d.ts
 
 
 # scripts (doc generation)
-/scripts/
+/scripts/*
+# 顧客ワイヤー同期（npm run wireframes:sync）はモックの一部なので管理する
+!/scripts/sync-wireframes.mjs
+!/scripts/wireframe-adapters.mjs
 
 # claude code config (local only)
 /.claude/skills/
@@ -105,3 +108,6 @@ next-env.d.ts
 /.env.figma*
 /.github/*
 !/.github/workflows/
+
+# 顧客ワイヤーのコピー（公開は顧客了承後。正本は ship_sams-project/docs/design/screen/phase2）
+/public/wireframes/

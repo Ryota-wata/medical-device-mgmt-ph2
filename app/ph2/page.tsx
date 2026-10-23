@@ -18,6 +18,7 @@ import {
   Archive,
   Stethoscope,
   Send,
+  LayoutTemplate,
 } from 'lucide-react';
 
 interface FeatureItem {
@@ -266,6 +267,27 @@ export default function Ph2IndexPage() {
             </div>
           </section>
         ))}
+        {/* 参考資料: 顧客が作成した Phase2 画面設計（HTML ワイヤー） */}
+        <section className="mb-8">
+          <h2 className="text-base font-semibold text-content-primary mb-3">参考資料</h2>
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => router.push('/ph2-wireframes')}
+              className="text-left bg-white border border-stroke-card rounded-lg p-4 hover:border-cta-primary hover:shadow-md transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center justify-center size-8 rounded-md bg-emerald-50 text-emerald-700">
+                  <LayoutTemplate className="w-4 h-4" />
+                </span>
+              </div>
+              <h3 className="text-sm font-semibold text-content-primary mb-1 text-balance">顧客ワイヤー一覧</h3>
+              <p className="text-xs text-content-sub text-pretty leading-relaxed">
+                顧客が作成した Phase2 画面設計（HTML ワイヤー）をモックの中で開いて確認する
+              </p>
+            </button>
+          </div>
+        </section>
       </main>
     </div>
   );

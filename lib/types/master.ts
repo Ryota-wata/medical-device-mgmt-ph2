@@ -19,7 +19,36 @@ export interface FacilityMaster {
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
+
+  // ── Ph2 施設マスタ（顧客ワイヤー 操作UI_施設マスタ v3.3 / MS-101・MS-102）──
+  /** 施設略称（一覧・帳票ヘッダの表示に使用） */
+  shortName?: string;
+  /** 二次医療圏（手入力。登録済みの値を候補に出す） */
+  secondaryMedicalArea?: string;
+  /** 延床面積（㎡） */
+  floorArea?: string;
+  /** 契約状況。利用の開始・停止の操作で変わる（直接は変更しない） */
+  contractStatus?: FacilityContractStatus;
+  /** リモデル契約。契約状況とは独立 */
+  remodelContract?: 'あり' | 'なし';
+  /** 契約開始日・契約終了日（紙の契約書の日付。YYYY-MM-DD）。契約終了日＝契約更新日 */
+  contractStartDate?: string;
+  contractEndDate?: string;
+  /** 利用開始日・利用停止予定日・利用停止日（操作で自動記録。YYYY/MM/DD） */
+  useStartDate?: string;
+  stopPlanDate?: string;
+  stopDate?: string;
+  /** 認定情報（分類ごとの複数選択を 1 つの配列で持つ） */
+  certifications?: string[];
+  /** 病床・治療室・諸室（キーは画面の項目名。'' は未入力で 0 と区別する） */
+  beds?: Record<string, string>;
+  rooms?: Record<string, string>;
+  /** 担当する SHIP の管理組織（SHIP 管理者に見せる範囲） */
+  managingOrgs?: string[];
 }
+
+/** 施設の契約状況（2026-09-15 SE 確認で 4 値） */
+export type FacilityContractStatus = '未契約' | '契約中' | '停止予定' | '停止中';
 
 // SHIP資産マスタの型定義
 export interface AssetMaster {

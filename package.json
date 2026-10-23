@@ -10,7 +10,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "wireframes:sync": "node scripts/sync-wireframes.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.8.0",
